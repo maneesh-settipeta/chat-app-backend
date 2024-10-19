@@ -57,7 +57,6 @@ io.on("connection", (socket) => {
             const saveMessage = await connection.query(query, values);
             console.log(saveMessage.rows[0]);
             io.to(receiver_uuid).emit('receiveMessage', { logged_in_user_uuid, message });
-            io.to(logged_in_user_uuid).emit('receiveMessage', { logged_in_user_uuid, message });
         } catch (error) {
             console.error('Error saving message to the database:', error);
         }
