@@ -12,6 +12,7 @@ app.use(express.json());
 
 const port = 3000;
 const http = require('http');
+const { log, error } = require('console');
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -33,7 +34,8 @@ const connection = new Client({
 connection.connect((err) => {
     if (err) {
         console.log(err);
-        throw err
+        // throw err
+        console.error(err)
     }
     console.log(port + "Connected Backend" + process.env.DB_PORT)
 });
