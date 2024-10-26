@@ -24,11 +24,13 @@ const io = new Server(server, {
 
 
 const connection = new Client({
-    host: process.env.DB_HOSTNAME,
-    user: process.env.DB_USERNAME,
-    port: process.env.DB_PORT,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    connectionString: process.env.DATABASE_URL
+    // host: process.env.DB_HOSTNAME,
+    // user: process.env.DB_USERNAME,
+    // port: process.env.DB_PORT,
+    // password: process.env.DB_PASSWORD,
+    // database: process.env.DB_NAME,
+    // ssl: process.env.ssl
 })
 
 connection.connect((err) => {
