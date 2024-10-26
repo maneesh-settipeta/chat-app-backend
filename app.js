@@ -42,24 +42,25 @@ connection.connect((err) => {
 
 io.on("connection", (socket) => {
     console.log("Connected to Socket", socket.id);
+    socket.on("joinChat", (receiver_uuid, logged_in_user_uuid) => {
+        const sortedUsersId = [receiver_uuid, logged_in_user_uuid].sort().join("_")
+        console.log(`${receiver_uuid} and  ${logged_in_user_uuid} Joined in ${sortedUsersId}`);
+        socket.join(sortedUsersId);
 
-    socket.on("joinChat", (user_uuid) => {
-        console.log(`${user_uuid} Joined 46`);
-        socket.join(user_uuid);
     });
-
     socket.on('sendMessage', async (data) => {
         const { logged_in_user_uuid, receiver_uuid, message } = data;
-        console.log(logged_in_user_uuid, receiver_uuid, message, "Received data from client");
+        const sortedusersids = [receiver_uuid, logged_in_user_uuid].sort().join("_");
+
         try {
-            const query = "INSERT INTO messages (logged_in_user_uuid, receiver_uuid, message) VALUES($1,$2,$3) RETURNING *";
-            const values = [logged_in_user_uuid, receiver_uuid, message]
+            const query = "INSERT INTO messages (logged_in_user_uuid, receiver_uuid, message, sortedUsersIds) VALUES($1,$2,$3,$4) RETURNING *";
+            const values = [logged_in_user_uuid, receiver_uuid, message, sortedusersids]
             const saveMessage = await connection.query(query, values);
             console.log(saveMessage.rows[0]);
-            io.to(receiver_uuid).emit('receiveMessage', { logged_in_user_uuid, message });
+            io.to(sortedusersids).emit('receiveMessage', { logged_in_user_uuid, receiver_uuid, message, sortedusersids });
         } catch (error) {
             console.error('Error saving message to the database:', error);
-        }
+        };
     });
     socket.on("disconnect", () => {
         console.log("User disconnected", socket.id);
@@ -67,6 +68,21 @@ io.on("connection", (socket) => {
 })
 
 
+app.post('/getMessages', async (req, res) => {
+    const { sorteduseruuids } = req.body;
+    console.log(sorteduseruuids, "THIS IS SORTED");
+
+    try {
+        const query = 'SELECT * FROM messages WHERE sortedusersids=$1';
+        const values = [sorteduseruuids];
+        const getMessage = await connection.query(query, values);
+        res.status(201).json({ data: getMessage.rows });
+        console.log(getMessage.rows);
+    } catch (error) {
+        console.error(error, "Error while fetching");
+        res.status(501).json({ msg: "Error while getting messages" });
+    }
+})
 
 
 app.post('/createSignUp', async (req, res) => {
@@ -109,13 +125,13 @@ app.get('/getUsers', async (req, res) => {
 app.post('/login', async (req, res) => {
     const { email, userpassword } = req.body;
     console.log(email, userpassword);
-    
+
     try {
         const query = 'SELECT * from users WHERE email=$1';
         const values = [email];
         const checkIsUserThere = await connection.query(query, values);
         console.log(checkIsUserThere);
-        
+
         const userDetails = checkIsUserThere.rows[0];
         if (checkIsUserThere.rows.length === 0) {
             res.status(404).json({ message: "User not found" });
@@ -123,7 +139,7 @@ app.post('/login', async (req, res) => {
         const hashedPassword = userDetails.password
         const checkPassword = await bcrypt.compare(userpassword, hashedPassword);
         if (checkPassword) {
-            res.status(202).json({msg:"valid", data:userDetails});
+            res.status(202).json({ msg: "valid", data: userDetails });
         }
         else {
             res.status(401).json({ msg: "Unauthorized" });
@@ -136,8 +152,6 @@ app.post('/login', async (req, res) => {
         });
     }
 });
-
-
 
 
 app.post('/signUp', async (req, res) => {
