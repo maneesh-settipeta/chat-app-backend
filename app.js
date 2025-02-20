@@ -106,7 +106,7 @@ app.post('/createSignUp', async (req, res) => {
 
 app.get("/", async (req, res) => {
     res.json({
-        msg: "Getting"
+        msg: "Gettkjkjdshfkjshking"
     })
 })
 
